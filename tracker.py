@@ -157,16 +157,15 @@ with view_tab3:
 
         # Plot rows for every unique task entry item
         for _, row in df.iterrows():
-            # Container for Plan and Achievement Row block elements
             r_cols_p = st.columns([1.5, 1.5, 2] + [0.5] * len(timeline_months))
             r_cols_a = st.columns([1.5, 1.5, 2] + [0.5] * len(timeline_months))
             
             # Left fixed descriptive columns
-            r_cols_p[0].markdown(f"**{row['Project']}**")
-            r_cols_p[1].markdown(row['Bucket'])
-            r_cols_p[2].markdown(f"{row['Task']} `[P]`")
+            r_cols_p.markdown(f"**{row['Project']}**")
+            r_cols_p.markdown(row['Bucket'])
+            r_cols_p.markdown(f"{row['Task']} `[P]`")
             
-            r_cols_a[2].markdown("<p style='color:gray; font-size:12px;'>↳ Achievement `[A]`</p>", unsafe_allow_html=True)
+            r_cols_a.markdown("<p style='color:gray; font-size:12px; margin:0;'>↳ Achievement `[A]`</p>", unsafe_allow_html=True)
             
             # Check overlap status for each date cell against timeline ranges
             for m_idx, (y, m, _) in enumerate(timeline_months):
@@ -176,9 +175,7 @@ with view_tab3:
                 else:
                     cell_end = datetime.date(y, m + 1, 1) - datetime.timedelta(days=1)
                 
-                # Check Plan coverage bounds
                 has_plan = not (row["Plan End"] < cell_start or row["Plan Start"] > cell_end)
-                # Check Achievement coverage bounds 
                 has_ach = not (row["Ach End"] < cell_start or row["Ach Start"] > cell_end)
                 
                 if has_plan:
