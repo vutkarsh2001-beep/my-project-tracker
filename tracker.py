@@ -151,7 +151,7 @@ with view_tab3:
         header_cols[2].markdown("**Task**")
         
         for m_idx, (_, _, m_label) in enumerate(timeline_months):
-            header_cols[3 + m_idx].markdown(f"<p style='font-size:10px; font-weight:bold; text-align:center;'>{m_label}</p>", unsafe_allow_html=True)
+            header_cols[3 + m_idx].markdown(f"<p style='font-size:10px; font-weight:bold; text-align:center; margin:0;'>{m_label}</p>", unsafe_allow_html=True)
             
         st.markdown("<hr style='margin:4px 0;' />", unsafe_allow_html=True)
 
@@ -160,12 +160,12 @@ with view_tab3:
             r_cols_p = st.columns([1.5, 1.5, 2] + [0.5] * len(timeline_months))
             r_cols_a = st.columns([1.5, 1.5, 2] + [0.5] * len(timeline_months))
             
-            # Left fixed descriptive columns
-            r_cols_p.markdown(f"**{row['Project']}**")
-            r_cols_p.markdown(row['Bucket'])
-            r_cols_p.markdown(f"{row['Task']} `[P]`")
+            # Left fixed descriptive columns mapped to precise tracking slot indices
+            r_cols_p[0].markdown(f"**{row['Project']}**")
+            r_cols_p[1].markdown(row['Bucket'])
+            r_cols_p[2].markdown(f"{row['Task']} `[P]`")
             
-            r_cols_a.markdown("<p style='color:gray; font-size:12px; margin:0;'>↳ Achievement `[A]`</p>", unsafe_allow_html=True)
+            r_cols_a[0].markdown("<p style='color:gray; font-size:12px; margin:0;'>↳ Achievement `[A]`</p>", unsafe_allow_html=True)
             
             # Check overlap status for each date cell against timeline ranges
             for m_idx, (y, m, _) in enumerate(timeline_months):
@@ -184,3 +184,4 @@ with view_tab3:
                     r_cols_a[3 + m_idx].markdown("<div style='background-color:#2ca02c; height:20px; border-radius:2px;'></div>", unsafe_allow_html=True)
             
             st.markdown("<hr style='margin:2px 0; border-top:1px dashed #444;' />", unsafe_allow_html=True)
+
