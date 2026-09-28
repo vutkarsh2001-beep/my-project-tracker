@@ -3,12 +3,12 @@ import pandas as pd
 import datetime
 import os
 
-# --- 1. SET UP STREAMLIT PAGE CONFIG ---
-st.set_page_config(page_title="Advanced Project Matrix Planner", layout="wide")
+# --- 1. SET UP STREAMLIT PAGE CONFIG & CSS STYLING ---
+st.set_page_config(page_title="MS Planner Workspace Engine", layout="wide")
 
-# Inject explicit custom style sheets to achieve a frozen left pane and scrollable calendar track
 st.markdown('''
 <style>
+    /* Gantt Table Structure styling */
     .gantt-wrapper {
         display: flex;
         flex-direction: column;
@@ -104,6 +104,21 @@ st.markdown('''
         text-decoration: underline;
         color: #4da3ff;
     }
+    
+    /* MS Planner Kanban Card Styling styling */
+    .planner-card {
+        background-color: #222;
+        border: 1px solid #333;
+        border-radius: 6px;
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+    .planner-card-header {
+        font-size: 11px;
+        color: #1f77b4;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
 </style>
 ''', unsafe_allow_html=True)
 
@@ -121,13 +136,13 @@ def load_data():
         return [
             {
                 "Category": "Digital Strategy", "Project": "Project-1", "Bucket": "Bucket-1", 
-                "Task": "Task-1-Name", "Priority": "P1", "Is_Late": False,
+                "Task": "Task Test Run", "Priority": "P1", "Is_Late": False, "Status": "In Progress",
                 "Plan Start": datetime.date(2026, 4, 1), "Plan End": datetime.date(2026, 7, 15),
                 "Actual End": datetime.date(2026, 7, 10)
             },
             {
                 "Category": "Operations", "Project": "Project-2", "Bucket": "Bucket-2", 
-                "Task": "Task-1-Name", "Priority": "P3", "Is_Late": True,
+                "Task": "Failure Modes Analysis", "Priority": "P3", "Is_Late": True, "Status": "Not Started",
                 "Plan Start": datetime.date(2027, 4, 1), "Plan End": datetime.date(2027, 10, 1),
                 "Actual End": datetime.date(2027, 10, 15)
             }
@@ -184,18 +199,83 @@ if "matrix_tasks" not in st.session_state:
 
 df = pd.DataFrame(st.session_state.matrix_tasks)
 
-# --- 4. FILTER HEADERS & LEGEND ---
-st.title("📂 MS Planner Gantt Workspace")
+# --- 4. TOP APP LEVEL NAVIGATION LOGIC ---
+st.title("📋 Microsoft Planner Enterprise Workspace")
 
-header_col, legend_col = st.columns(2)
-available_fy_options = generate_dynamic_fy_blocks(st.session_state.matrix_tasks)
+# Define the classic tabs matching the visual layouts
+tab_board, tab_grid, tab_gantt = st.tabs(["📊 Board View", "📝 Grid (List View)", "📅 Advanced Gantt Chart"])
 
-with header_col:
-    f_col1, f_col2, f_col3 = st.columns(3)
-    with f_col1:
+# --- TAB A: MS PLANNER KANBAN BOARD VIEW ---
+with tab_board:
+    st.subheader("Interactive Task Pipeline Board")
+    
+    statuses = ["Not Started", "In Progress", "Completed"]
+    board_cols = st.columns(3)
+    
+    for idx, status_type in enumerate(statuses):
+        with board_cols[idx]:
+            st.markdown(f"### 🔘 {status_type}")
+            st.markdown("---")
+            
+            # Filter rows aligning with column criteria
+            status_tasks = df[df["Status"] == status_type]
+            
+            if status_tasks.empty:
+                st.caption("No active tasks in this pipeline stage.")
+            else:
+                for _, row in status_tasks.iterrows():
+                    with st.container():
+                        st.markdown(f'''
+                        <div class="planner-card">
+                            <div class="planner-card-header">{row["Category"]}</div>
+                            <div style="font-size:14px; font-weight:bold; margin: 4px 0;">{row["Task"]}</div>
+                            <div style="font-size:12px; color:#aaa; margin-bottom:8px;">📁 {row["Project"]} &rarr; {row["Bucket"]}</div>
+                            <div style="display:flex; justify-content:space-between; font-size:11px;">
+                                <span style="color:#ffaa00;">⚠️ Priority: {row["Priority"]}</span>
+                                <span style="color:#888;">🗓️ Due: {row["Plan End"]}</span>
+                            </div>
+                        </div>
+                        ''', unsafe_allow_html=True)
+                        
+                        # Interactive quick modifier toggle inside card container
+                        card_key = f"kb_status_switch_{row['Task']}_{idx}"
+                        new_status_select = st.selectbox("Shift Stage", statuses, index=statuses.index(row["Status"]), key=card_key)
+                        
+                        if new_status_select != row["Status"]:
+                            for t in st.session_state.matrix_tasks:
+                                if t["Task"] == row["Task"]:
+                                    t["Status"] = new_status_select
+                            save_data(st.session_state.matrix_tasks)
+                            st.rerun()
+
+# --- TAB B: DATA LEDGER EDITING GRID VIEW ---
+with tab_grid:
+    st.subheader("📝 Live Task Spreadsheet Grid Ledger")
+    st.caption("You can modify text descriptions, alter category classifications, or adjust priorities directly inside the table grid below.")
+    
+    # Render interactive grid editor tracking state footprint
+    edited_data_sheet = st.data_editor(df, use_container_width=True, hide_index=True)
+    
+    if st.button("💾 Apply & Save Spreadsheet Changes"):
+        st.session_state.matrix_tasks = edited_data_sheet.to_dict(orient="records")
+        save_data(st.session_state.matrix_tasks)
+        st.success("Data ledger written to persistent storage successfully!")
+        st.rerun()
+
+# --- TAB C: ADVANCED SCROLLABLE GANTT TIMELINE ---
+with tab_gantt:
+    header_col, legend_col = st.columns(2)
+    available_fy_options = generate_dynamic_fy_blocks(st.session_state.matrix_tasks)
+
+    with header_col:
+        f_col1, f_col2, f_col3 = st.columns(3)
+        with f_col1:
+                # --- (This block assumes it starts inside the 'with f_col1:' statement under 'with view_tab3:') ---
         filter_fy = st.selectbox("Financial Year Horizon", available_fy_options)
+        
     with f_col2:
         filter_cat = st.selectbox("Category Grouping", ["All", "Digital Strategy", "Operations", "Study & Research", "Administrative"])
+        
     with f_col3:
         filter_priority = st.selectbox("Task Priority View", ["All", "P1", "P2", "P3"])
 
@@ -212,13 +292,11 @@ with legend_col:
 
 start_date, end_date = parse_fy_block_dates(filter_fy)
 filtered_df = df.copy()
-
-filtered_df = filtered_df[
-    (filtered_df["Plan Start"] <= end_date) & (filtered_df["Plan End"] >= start_date)
-]
+filtered_df = filtered_df[(filtered_df["Plan Start"] <= end_date) & (filtered_df["Plan End"] >= start_date)]
 
 if filter_cat != "All":
     filtered_df = filtered_df[filtered_df["Category"] == filter_cat]
+
 if filter_priority != "All":
     filtered_df = filtered_df[filtered_df["Priority"] == filter_priority]
 
@@ -237,6 +315,7 @@ while curr_tracker <= end_date:
 st.markdown("---")
 gantt_html = '<div class="gantt-wrapper">'
 
+# Header Row setup
 gantt_html += '<div class="gantt-row gantt-header-row">'
 gantt_html += '<div class="fixed-pane">' \
               '<div class="cell-category">Category</div>' \
@@ -245,6 +324,7 @@ gantt_html += '<div class="fixed-pane">' \
               '<div class="cell-task">Task Name</div>' \
               '<div class="cell-priority">Priority</div>' \
               '</div>'
+              
 gantt_html += '<div class="scrollable-pane">'
 for y, m, m_label in timeline_months:
     gantt_html += f'<div class="month-column-block">' \
@@ -257,6 +337,7 @@ for y, m, m_label in timeline_months:
                   f'</div></div>'
 gantt_html += '</div></div>'
 
+# Content Rows parsing loop
 if filtered_df.empty:
     gantt_html += '<div style="padding: 20px; text-align: center; color: #666;">No active planner tasks align with your current filtering limits.</div>'
 else:
@@ -266,7 +347,6 @@ else:
         t_anchor = f"task-{str(row['Task']).lower().replace(' ', '-')}"
         
         gantt_html += '<div class="gantt-row">'
-                # --- (This section belongs inside your 'for idx, row in filtered_df.iterrows():' loop) ---
         gantt_html += f'<div class="fixed-pane">' \
                       f'<div class="cell-category">{row["Category"]}</div>' \
                       f'<div class="cell-project"><a class="matrix-link" href="#{p_anchor}" target="_self">📂 {row["Project"]}</a></div>' \
@@ -291,11 +371,9 @@ else:
             gantt_html += '</div></div>'
         gantt_html += '</div></div>'
 
-# --- (This section sits outside the loop, closing the main wrapper elements) ---
 gantt_html += '</div>'
 st.markdown(gantt_html, unsafe_allow_html=True)
 
-# --- 7. DEEP INTERACTIVE DETAILED ROUTER EDITS ---
 st.markdown("---")
 st.markdown("### 🔍 Live Focus Detail Router Panel")
 
@@ -321,7 +399,8 @@ with st.expander("➕ Inject New Task Entry Form (Test Auto-Expanding Financial 
                     "Bucket": ins_buck,
                     "Task": ins_task, 
                     "Priority": ins_priority, 
-                    "Is_Late": False,
+                    "Is_Late": False, 
+                    "Status": "Not Started",
                     "Plan Start": ins_p_start, 
                     "Plan End": ins_p_end, 
                     "Actual End": ins_p_end
@@ -347,7 +426,12 @@ if not filtered_df.empty:
             with col_y:
                 st.markdown("<br>", unsafe_allow_html=True)
                 status_box = st.checkbox("Mark as Target Breached / Late", value=row["Is_Late"], key=f"check_late_{idx}")
-                if status_box != row["Is_Late"]:
+                
+                # Update status category mapping options as well inside detail manager
+                update_stage = st.selectbox("Change Pipeline Status Stage", ["Not Started", "In Progress", "Completed"], index=["Not Started", "In Progress", "Completed"].index(row["Status"]), key=f"dt_stage_up_{idx}")
+                
+                if status_box != row["Is_Late"] or update_stage != row["Status"]:
                     st.session_state.matrix_tasks[idx]["Is_Late"] = status_box
+                    st.session_state.matrix_tasks[idx]["Status"] = update_stage
                     save_data(st.session_state.matrix_tasks)
                     st.rerun()
