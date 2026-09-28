@@ -1,7 +1,7 @@
 {
-  "$schema": "https://schema.railpack.com",
+  "$schema": "https://railpack.com",
   "provider": "python",
   "deploy": {
-    "startCommand": "streamlit run tracker.py --server.port=$PORT --server.address=0.0.0.0"
+    "startCommand": "streamlit run tracker.py --server.address=0.0.0.0"
   }
 }
