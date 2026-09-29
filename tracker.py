@@ -242,7 +242,8 @@ with tab_board:
             if status_tasks.empty:
                 st.caption("No active tasks in this pipeline stage.")
             else:
-                for _, row in status_tasks.iterrows():
+                # FIXED: We use task_idx (the unique row number from the database) instead of a generic loop
+                for task_idx, row in status_tasks.iterrows():
                     with st.container():
                         st.markdown(f'''
                         <div class="planner-card">
@@ -256,15 +257,15 @@ with tab_board:
                         </div>
                         ''', unsafe_allow_html=True)
                         
-                        card_key = f"kb_status_switch_{row['Task']}_{idx}"
+                        # FIXED: Appending the absolute unique task_idx to make this key completely bulletproof
+                        card_key = f"kb_status_switch_{task_idx}_{idx}"
                         new_status_select = st.selectbox("Shift Stage", statuses, index=statuses.index(row["Status"]), key=card_key)
                         
                         if new_status_select != row["Status"]:
-                            for t in st.session_state.matrix_tasks:
-                                if t["Task"] == row["Task"]:
-                                    t["Status"] = new_status_select
+                            st.session_state.matrix_tasks[task_idx]["Status"] = new_status_select
                             save_data(st.session_state.matrix_tasks)
                             st.rerun()
+
 
 # --- TAB B: DATA LEDGER EDITING GRID VIEW ---
 with tab_grid:
