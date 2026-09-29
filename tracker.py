@@ -437,7 +437,7 @@ with tab_gantt:
     if not filtered_df.empty:
         for idx, row in filtered_df.iterrows():
             p_anchor = f"proj-{str(row['Project']).lower().replace(' ', '-')}"
-            b_anchor = f"buck-{str(row['Bucket']).lower().replace(' ', '-')"
+            b_anchor = f"buck-{str(row['Bucket']).lower().replace(' ', '-')}"
             t_anchor = f"task-{str(row['Task']).lower().replace(' ', '-')}"
             
             st.markdown(f'<div id="{p_anchor}"></div><div id="{b_anchor}"></div><div id="{t_anchor}"></div>', unsafe_allow_html=True)
