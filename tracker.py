@@ -209,7 +209,7 @@ def generate_dynamic_fy_blocks(tasks_list):
 def parse_fy_block_dates(label):
     try:
         part = label.split("-")
-        prefix_year_short = int(part[0].split("'")[0])
+        prefix_year_short = int(part[0].split("'")[1])
         full_start_year = 2000 + prefix_year_short
         start_date_bound = datetime.date(full_start_year, 4, 1)
         end_date_bound = datetime.date(full_start_year + 2, 3, 31)
@@ -418,25 +418,26 @@ with tab_gantt:
                     st.error("Task description cannot remain blank.")
                 else:
                     st.session_state.matrix_tasks.append({
-                        "Category": ins_cat, 
-                        "Project": ins_proj, 
+                        "Category": ins_cat,
+                        "Project": ins_proj,
                         "Bucket": ins_buck,
-                        "Task": ins_task, 
-                        "Priority": ins_priority, 
-                        "Is_Late": False, 
+                        "Task": ins_task,
+                        "Priority": ins_priority,
+                        "Is_Late": False,
                         "Status": "Not Started",
-                        "Plan Start": ins_p_start, 
-                        "Plan End": ins_p_end, 
+                        "Plan Start": ins_p_start,
+                        "Plan End": ins_p_end,
                         "Actual End": ins_p_end
                     })
                     save_data(st.session_state.matrix_tasks)
+                    st.session_state.matrix_tasks = load_data()
                     st.success("Committed successfully! Dynamic filter will now list future bounds.")
                     st.rerun()
 
     if not filtered_df.empty:
         for idx, row in filtered_df.iterrows():
             p_anchor = f"proj-{str(row['Project']).lower().replace(' ', '-')}"
-            b_anchor = f"buck-{str(row['Bucket']).lower().replace(' ', '-')}"
+            b_anchor = f"buck-{str(row['Bucket']).lower().replace(' ', '-')"
             t_anchor = f"task-{str(row['Task']).lower().replace(' ', '-')}"
             
             st.markdown(f'<div id="{p_anchor}"></div><div id="{b_anchor}"></div><div id="{t_anchor}"></div>', unsafe_allow_html=True)
@@ -449,12 +450,12 @@ with tab_gantt:
                     st.markdown(f"🗓️ *Planned Window timeline bounds:* `{row['Plan Start']}` to `{row['Plan End']}`")
                 with col_y:
                     st.markdown("<br>", unsafe_allow_html=True)
-                # --- (This block sits inside the 'with col_y:' container) ---
-                status_box = st.checkbox("Mark as Target Breached / Late", value=row["Is_Late"], key=f"check_late_{idx}")
-                update_stage = st.selectbox("Change Pipeline Status Stage", ["Not Started", "In Progress", "Completed"], index=["Not Started", "In Progress", "Completed"].index(row["Status"]), key=f"dt_stage_up_{idx}")
-                
-                if status_box != row["Is_Late"] or update_stage != row["Status"]:
-                    st.session_state.matrix_tasks[idx]["Is_Late"] = status_box
-                    st.session_state.matrix_tasks[idx]["Status"] = update_stage
-                    save_data(st.session_state.matrix_tasks)
-                    st.rerun()
+                    # --- (This block sits inside the 'with col_y:' container inside the task loop) ---
+                    status_box = st.checkbox("Mark as Target Breached / Late", value=row["Is_Late"], key=f"check_late_{idx}")
+                    update_stage = st.selectbox("Change Pipeline Status Stage", ["Not Started", "In Progress", "Completed"], index=["Not Started", "In Progress", "Completed"].index(row["Status"]), key=f"dt_stage_up_{idx}")
+                    
+                    if status_box != row["Is_Late"] or update_stage != row["Status"]:
+                        st.session_state.matrix_tasks[idx]["Is_Late"] = status_box
+                        st.session_state.matrix_tasks[idx]["Status"] = update_stage
+                        save_data(st.session_state.matrix_tasks)
+                        st.rerun()
