@@ -142,6 +142,24 @@ st.markdown('''
         font-weight: bold;
         text-transform: uppercase;
     }
+    
+    /* Styled Submit Button overrides */
+    div.stButton > button {
+        background-color: #2ca02c !important;
+        color: white !important;
+        font-weight: bold !important;
+        border: none !important;
+        padding: 10px 24px !important;
+        border-radius: 4px !important;
+        cursor: pointer !important;
+        transition: background-color 0.1s ease !important;
+    }
+    div.stButton > button:hover {
+        background-color: #258525 !important;
+    }
+    div.stButton > button:active {
+        background-color: #1e6b1e !important;
+    }
 </style>
 ''', unsafe_allow_html=True)
 
@@ -209,7 +227,7 @@ def generate_dynamic_fy_blocks(tasks_list):
 def parse_fy_block_dates(label):
     try:
         part = label.split("-")
-        prefix_year_short = int(part.split("'"))
+        prefix_year_short = int(part[0].split("'")[0])
         full_start_year = 2000 + prefix_year_short
         start_date_bound = datetime.date(full_start_year, 4, 1)
         end_date_bound = datetime.date(full_start_year + 2, 3, 31)
@@ -242,7 +260,7 @@ with tab_board:
             if status_tasks.empty:
                 st.caption("No active tasks in this pipeline stage.")
             else:
-                for _, row in status_tasks.iterrows():
+                for task_idx, row in status_tasks.iterrows():
                     with st.container():
                         st.markdown(f'''
                         <div class="planner-card">
@@ -256,13 +274,12 @@ with tab_board:
                         </div>
                         ''', unsafe_allow_html=True)
                         
-                        card_key = f"kb_status_switch_{row['Task']}_{idx}"
+                        card_key = f"kb_status_switch_{task_idx}_{idx}"
                         new_status_select = st.selectbox("Shift Stage", statuses, index=statuses.index(row["Status"]), key=card_key)
                         
                         if new_status_select != row["Status"]:
-                            for t in st.session_state.matrix_tasks:
-                                if t["Task"] == row["Task"]:
-                                    t["Status"] = new_status_select
+                        if new_status_select != row["Status"]:
+                            st.session_state.matrix_tasks[task_idx]["Status"] = new_status_select
                             save_data(st.session_state.matrix_tasks)
                             st.rerun()
 
@@ -272,7 +289,6 @@ with tab_grid:
     st.caption("You can modify text descriptions, alter category classifications, or adjust priorities directly inside the table grid below.")
     edited_data_sheet = st.data_editor(df, use_container_width=True, hide_index=True)
     
-    # --- (This section belongs inside your 'with tab_board:' / 'with tab_grid:' context blocks) ---
     if st.button("💾 Apply & Save Spreadsheet Changes"):
         st.session_state.matrix_tasks = edited_data_sheet.to_dict(orient="records")
         save_data(st.session_state.matrix_tasks)
@@ -283,7 +299,7 @@ with tab_grid:
 with tab_gantt:
     header_col, legend_col = st.columns(2)
     available_fy_options = generate_dynamic_fy_blocks(st.session_state.matrix_tasks)
-
+    
     with header_col:
         f_col1, f_col2, f_col3 = st.columns(3)
         with f_col1:
@@ -292,7 +308,7 @@ with tab_gantt:
             filter_cat = st.selectbox("Category Grouping", ["All", "Digital Strategy", "Operations", "Study & Research", "Administrative"])
         with f_col3:
             filter_priority = st.selectbox("Task Priority View", ["All", "P1", "P2", "P3"])
-
+            
     with legend_col:
         st.markdown('''
         <div style="background-color: #1e1e1e; padding: 12px; border-radius: 6px; border: 1px solid #333; font-size: 11px; float: right; width: 100%;">
@@ -306,19 +322,21 @@ with tab_gantt:
 
     start_date, end_date = parse_fy_block_dates(filter_fy)
     filtered_df = df.copy()
-
+    
     if not filtered_df.empty:
-        filtered_df = filtered_df[(filtered_df["Plan Start"] <= end_date) & (filtered_df["Plan End"] >= start_date)]
-
+        filtered_df = filtered_df[
+            (filtered_df["Plan Start"] <= end_date) & (filtered_df["Plan End"] >= start_date)
+        ]
+        
     if filter_cat != "All" and not filtered_df.empty:
         filtered_df = filtered_df[filtered_df["Category"] == filter_cat]
-
+        
     if filter_priority != "All" and not filtered_df.empty:
         filtered_df = filtered_df[filtered_df["Priority"] == filter_priority]
-
+        
     if not filtered_df.empty:
         filtered_df = filtered_df.sort_values(by=["Category", "Project", "Bucket", "Task"])
-
+        
     timeline_months = []
     curr_tracker = start_date
     while curr_tracker <= end_date:
@@ -327,7 +345,7 @@ with tab_gantt:
             curr_tracker = datetime.date(curr_tracker.year + 1, 1, 1)
         else:
             curr_tracker = datetime.date(curr_tracker.year, curr_tracker.month + 1, 1)
-
+            
     st.markdown("---")
     
     # --- RENDER SINGLE TRACK MULTI-PANE SPLIT LAYOUT ---
@@ -359,7 +377,7 @@ with tab_gantt:
                           f'<div class="cell-priority"><span style="color:#ffaa00; font-weight:bold;">{row["Priority"]}</span></div>' \
                           f'</div>'
     gantt_html += '</div>'  # End Left Panel
-    
+
     # 2. Right Scrollable Track Panel Setup (One Slider rules them all)
     gantt_html += '<div class="scrollable-timeline-track">'
     gantt_html += '<div class="header-row-height timeline-data-strip">'
@@ -373,7 +391,7 @@ with tab_gantt:
                       f'<div class="week-head-number">4</div>' \
                       f'</div></div>'
     gantt_html += '</div>'  # End Scrollable Headers
-    
+
     if not filtered_df.empty:
         for idx, row in filtered_df.iterrows():
             gantt_html += '<div class="panel-row-height timeline-data-strip">'
@@ -402,36 +420,36 @@ with tab_gantt:
     st.markdown("### 🔍 Live Focus Detail Router Panel")
 
     with st.expander("➕ Inject New Task Entry Form (Test Auto-Expanding Financial Years)", expanded=False):
-        with st.form("new_task_form"):
-            ins_cat = st.selectbox("Category Scope", ["Digital Strategy", "Operations", "Study & Research", "Administrative"])
-            ins_proj = st.text_input("Project Name", "Project-Future")
-            ins_buck = st.text_input("Bucket Target Container", "Bucket-Future")
-            ins_task = st.text_input("Unique Task Name")
-            ins_priority = st.selectbox("Priority Target", ["P1", "P2", "P3"])
-            
-            c_d1, c_d2 = st.columns(2)
-            ins_p_start = c_d1.date_input("Planned Start Date", datetime.date(2031, 4, 1))
-            ins_p_end = c_d2.date_input("Target Planned End Date", datetime.date(2032, 3, 1))
-            
-            if st.form_submit_button("Commit Task Entry to System"):
-                if ins_task.strip() == "":
-                    st.error("Task description cannot remain blank.")
-                else:
-                    st.session_state.matrix_tasks.append({
-                        "Category": ins_cat, 
-                        "Project": ins_proj, 
-                        "Bucket": ins_buck,
-                        "Task": ins_task, 
-                        "Priority": ins_priority, 
-                        "Is_Late": False, 
-                        "Status": "Not Started",
-                        "Plan Start": ins_p_start, 
-                        "Plan End": ins_p_end, 
-                        "Actual End": ins_p_end
-                    })
-                    save_data(st.session_state.matrix_tasks)
-                    st.success("Committed successfully! Dynamic filter will now list future bounds.")
-                    st.rerun()
+        ins_cat = st.selectbox("Category Scope", ["Digital Strategy", "Operations", "Study & Research", "Administrative"])
+        ins_proj = st.text_input("Project Name", "Project-Future")
+        ins_buck = st.text_input("Bucket Target Container", "Bucket-Future")
+        ins_task = st.text_input("Unique Task Name")
+        ins_priority = st.selectbox("Priority Target", ["P1", "P2", "P3"])
+        
+        c_d1, c_d2 = st.columns(2)
+        ins_p_start = c_d1.date_input("Planned Start Date", datetime.date(2026, 4, 1))
+        ins_p_end = c_d2.date_input("Target Planned End Date", datetime.date(2026, 7, 15))
+        
+        if st.button("Commit Task Entry to System"):
+            if ins_task.strip() == "":
+                st.error("Task description cannot remain blank.")
+            else:
+                st.session_state.matrix_tasks.append({
+                    "Category": ins_cat,
+                    "Project": ins_proj,
+                    "Bucket": ins_buck,
+                    "Task": ins_task,
+                    "Priority": ins_priority,
+                    "Is_Late": False,
+                    "Status": "Not Started",
+                    "Plan Start": ins_p_start,
+                    "Plan End": ins_p_end,
+                    "Actual End": ins_p_end
+                })
+                save_data(st.session_state.matrix_tasks)
+                st.session_state.matrix_tasks = load_data()
+                st.success("Committed successfully! Dynamic filter will now list future bounds.")
+                st.rerun()
 
     if not filtered_df.empty:
         for idx, row in filtered_df.iterrows():
@@ -445,18 +463,15 @@ with tab_gantt:
                 col_x, col_y = st.columns(2)
                 with col_x:
                     st.subheader(f"✏️ Management Interface: {row['Task']}")
-                    st.markdown(f"**Project:** {row['Project']} | **Bucket Stack:** {row['Bucket']} | **Stream Category:** {row['Category']}")
-                    st.markdown(f"🗓️ *Planned Window timeline bounds:* `{row['Plan Start']}` to `{row['Plan End']}`")
-                with col_y:
-                    st.markdown("<br>", unsafe_allow_html=True)
-                    status_box = st.checkbox("Mark as Target Breached / Late", value=row["Is_Late"], key=f"check_late_{idx}")
-                update_stage = st.selectbox(
-                    "Change Pipeline Status Stage", 
-                    ["Not Started", "In Progress", "Completed"], 
-                    index=["Not Started", "In Progress", "Completed"].index(row["Status"]), 
-                    key=f"dt_stage_up_{idx}"
-                )
-
+                # --- (This block sits inside the 'with col_x:' container) ---
+                st.markdown(f"**Project:** {row['Project']} | **Bucket Stack:** {row['Bucket']} | **Stream Category:** {row['Category']}")
+                st.markdown(f"🗓️ *Planned Window timeline bounds:* `{row['Plan Start']}` to `{row['Plan End']}`")
+                
+            with col_y:
+                st.markdown("<br>", unsafe_allow_html=True)
+                status_box = st.checkbox("Mark as Target Breached / Late", value=row["Is_Late"], key=f"check_late_{idx}")
+                update_stage = st.selectbox("Change Pipeline Status Stage", ["Not Started", "In Progress", "Completed"], index=["Not Started", "In Progress", "Completed"].index(row["Status"]), key=f"dt_stage_up_{idx}")
+                
                 if status_box != row["Is_Late"] or update_stage != row["Status"]:
                     st.session_state.matrix_tasks[idx]["Is_Late"] = status_box
                     st.session_state.matrix_tasks[idx]["Status"] = update_stage
