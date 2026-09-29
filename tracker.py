@@ -278,7 +278,6 @@ with tab_board:
                         new_status_select = st.selectbox("Shift Stage", statuses, index=statuses.index(row["Status"]), key=card_key)
                         
                         if new_status_select != row["Status"]:
-                        if new_status_select != row["Status"]:
                             st.session_state.matrix_tasks[task_idx]["Status"] = new_status_select
                             save_data(st.session_state.matrix_tasks)
                             st.rerun()
