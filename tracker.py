@@ -209,7 +209,7 @@ def generate_dynamic_fy_blocks(tasks_list):
 def parse_fy_block_dates(label):
     try:
         part = label.split("-")
-        prefix_year_short = int(part.split("'"))
+        prefix_year_short = int(part[0].split("'")[0])
         full_start_year = 2000 + prefix_year_short
         start_date_bound = datetime.date(full_start_year, 4, 1)
         end_date_bound = datetime.date(full_start_year + 2, 3, 31)
@@ -242,7 +242,6 @@ with tab_board:
             if status_tasks.empty:
                 st.caption("No active tasks in this pipeline stage.")
             else:
-                # FIXED: We use task_idx (the unique row number from the database) instead of a generic loop
                 for task_idx, row in status_tasks.iterrows():
                     with st.container():
                         st.markdown(f'''
@@ -257,7 +256,6 @@ with tab_board:
                         </div>
                         ''', unsafe_allow_html=True)
                         
-                        # FIXED: Appending the absolute unique task_idx to make this key completely bulletproof
                         card_key = f"kb_status_switch_{task_idx}_{idx}"
                         new_status_select = st.selectbox("Shift Stage", statuses, index=statuses.index(row["Status"]), key=card_key)
                         
@@ -266,15 +264,14 @@ with tab_board:
                             save_data(st.session_state.matrix_tasks)
                             st.rerun()
 
-
 # --- TAB B: DATA LEDGER EDITING GRID VIEW ---
 with tab_grid:
     st.subheader("📝 Live Task Spreadsheet Grid Ledger")
     st.caption("You can modify text descriptions, alter category classifications, or adjust priorities directly inside the table grid below.")
     edited_data_sheet = st.data_editor(df, use_container_width=True, hide_index=True)
     
-    # --- (This section belongs inside your 'with tab_board:' / 'with tab_grid:' context blocks) ---
     if st.button("💾 Apply & Save Spreadsheet Changes"):
+        # --- (This first block sits directly inside the 'if st.button("💾 Apply & Save Spreadsheet Changes"):' statement under Tab B) ---
         st.session_state.matrix_tasks = edited_data_sheet.to_dict(orient="records")
         save_data(st.session_state.matrix_tasks)
         st.success("Data ledger written to persistent storage successfully!")
@@ -284,7 +281,7 @@ with tab_grid:
 with tab_gantt:
     header_col, legend_col = st.columns(2)
     available_fy_options = generate_dynamic_fy_blocks(st.session_state.matrix_tasks)
-
+    
     with header_col:
         f_col1, f_col2, f_col3 = st.columns(3)
         with f_col1:
@@ -293,7 +290,7 @@ with tab_gantt:
             filter_cat = st.selectbox("Category Grouping", ["All", "Digital Strategy", "Operations", "Study & Research", "Administrative"])
         with f_col3:
             filter_priority = st.selectbox("Task Priority View", ["All", "P1", "P2", "P3"])
-
+            
     with legend_col:
         st.markdown('''
         <div style="background-color: #1e1e1e; padding: 12px; border-radius: 6px; border: 1px solid #333; font-size: 11px; float: right; width: 100%;">
@@ -307,19 +304,21 @@ with tab_gantt:
 
     start_date, end_date = parse_fy_block_dates(filter_fy)
     filtered_df = df.copy()
-
+    
     if not filtered_df.empty:
-        filtered_df = filtered_df[(filtered_df["Plan Start"] <= end_date) & (filtered_df["Plan End"] >= start_date)]
-
+        filtered_df = filtered_df[
+            (filtered_df["Plan Start"] <= end_date) & (filtered_df["Plan End"] >= start_date)
+        ]
+        
     if filter_cat != "All" and not filtered_df.empty:
         filtered_df = filtered_df[filtered_df["Category"] == filter_cat]
-
+        
     if filter_priority != "All" and not filtered_df.empty:
         filtered_df = filtered_df[filtered_df["Priority"] == filter_priority]
-
+        
     if not filtered_df.empty:
         filtered_df = filtered_df.sort_values(by=["Category", "Project", "Bucket", "Task"])
-
+        
     timeline_months = []
     curr_tracker = start_date
     while curr_tracker <= end_date:
@@ -328,7 +327,7 @@ with tab_gantt:
             curr_tracker = datetime.date(curr_tracker.year + 1, 1, 1)
         else:
             curr_tracker = datetime.date(curr_tracker.year, curr_tracker.month + 1, 1)
-
+            
     st.markdown("---")
     
     # --- RENDER SINGLE TRACK MULTI-PANE SPLIT LAYOUT ---
@@ -450,14 +449,10 @@ with tab_gantt:
                     st.markdown(f"🗓️ *Planned Window timeline bounds:* `{row['Plan Start']}` to `{row['Plan End']}`")
                 with col_y:
                     st.markdown("<br>", unsafe_allow_html=True)
-                    status_box = st.checkbox("Mark as Target Breached / Late", value=row["Is_Late"], key=f"check_late_{idx}")
-                update_stage = st.selectbox(
-                    "Change Pipeline Status Stage", 
-                    ["Not Started", "In Progress", "Completed"], 
-                    index=["Not Started", "In Progress", "Completed"].index(row["Status"]), 
-                    key=f"dt_stage_up_{idx}"
-                )
-
+                # --- (This block sits inside the 'with col_y:' container) ---
+                status_box = st.checkbox("Mark as Target Breached / Late", value=row["Is_Late"], key=f"check_late_{idx}")
+                update_stage = st.selectbox("Change Pipeline Status Stage", ["Not Started", "In Progress", "Completed"], index=["Not Started", "In Progress", "Completed"].index(row["Status"]), key=f"dt_stage_up_{idx}")
+                
                 if status_box != row["Is_Late"] or update_stage != row["Status"]:
                     st.session_state.matrix_tasks[idx]["Is_Late"] = status_box
                     st.session_state.matrix_tasks[idx]["Status"] = update_stage
