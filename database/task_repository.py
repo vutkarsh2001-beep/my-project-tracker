@@ -109,7 +109,6 @@ def update_task_status(
     conn.commit()
     conn.close()
 
-
 def update_task_details(
     task_id,
     description,
@@ -135,4 +134,13 @@ def update_task_details(
         WHERE id=?
         """,
         (
-          
+            description,
+            priority,
+            status,
+            closure_date,
+            task_id
+        )
+    )
+
+    conn.commit()
+    conn.close()
