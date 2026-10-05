@@ -1,3 +1,20 @@
+import sqlite3
+
+DB_NAME = "planner.db"
+
+
+def get_connection():
+
+    conn = sqlite3.connect(
+        DB_NAME,
+        check_same_thread=False
+    )
+
+    conn.row_factory = sqlite3.Row
+
+    return conn
+
+
 def initialize_database():
 
     conn = get_connection()
@@ -58,7 +75,7 @@ def initialize_database():
             display_order
         )
         VALUES
-        ('Backlog',1)
+        ('Backlog', 1)
         """)
 
     conn.commit()
