@@ -1,5 +1,9 @@
 import streamlit as st
 
+from views.task_details import (
+    render_task_details
+)
+
 from database.bucket_repository import (
     get_buckets,
     create_bucket
