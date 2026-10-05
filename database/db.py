@@ -1,19 +1,3 @@
-import sqlite3
-
-DB_NAME = "planner.db"
-
-
-def get_connection():
-    conn = sqlite3.connect(
-        DB_NAME,
-        check_same_thread=False
-    )
-
-    conn.row_factory = sqlite3.Row
-
-    return conn
-
-
 def initialize_database():
 
     conn = get_connection()
@@ -61,24 +45,21 @@ def initialize_database():
     )
     """)
 
-count = cursor.execute(
-    """
+    count = cursor.execute("""
     SELECT COUNT(*)
     FROM buckets
-    """
-).fetchone()[0]
+    """).fetchone()[0]
 
-if count == 0:
+    if count == 0:
 
-    cursor.execute(
-        """
+        cursor.execute("""
         INSERT INTO buckets(
             bucket_name,
             display_order
         )
         VALUES
         ('Backlog',1)
-        """
-    )    
-conn.commit()
+        """)
+
+    conn.commit()
     conn.close()
