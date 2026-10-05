@@ -11,7 +11,7 @@ st.set_page_config(
 
 st.title("📋 Microsoft Planner Enterprise Workspace")
 
-tab_board, tab_grid, tab_gantt = st.tabs(
+tab_board, tab_grid, tab_gantt, tab_calendar, tab_charts = st.tabs(
     [
         "📊 Board",
         "📝 Grid",
