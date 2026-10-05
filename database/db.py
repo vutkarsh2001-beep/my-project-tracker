@@ -61,5 +61,24 @@ def initialize_database():
     )
     """)
 
-    conn.commit()
+count = cursor.execute(
+    """
+    SELECT COUNT(*)
+    FROM buckets
+    """
+).fetchone()[0]
+
+if count == 0:
+
+    cursor.execute(
+        """
+        INSERT INTO buckets(
+            bucket_name,
+            display_order
+        )
+        VALUES
+        ('Backlog',1)
+        """
+    )    
+conn.commit()
     conn.close()
