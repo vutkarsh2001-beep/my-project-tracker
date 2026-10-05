@@ -28,7 +28,7 @@ from views.board_view import (
 from views.calendar_view import (
     render_calendar
 )
- 
+
 from views.charts_view import (
     render_charts
 )
