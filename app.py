@@ -19,10 +19,12 @@ tab_board, tab_grid, tab_gantt = st.tabs(
     ]
 )
 
+from views.board_view import (
+    render_board
+)
+
 with tab_board:
-    st.info(
-        "Board View coming in next module"
-    )
+    render_board()
 
 with tab_grid:
     st.info(
