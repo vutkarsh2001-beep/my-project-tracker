@@ -90,3 +90,75 @@ def update_task_status(
 
     conn.commit()
     conn.close()
+def get_task_by_id(task_id):
+
+    conn = get_connection()
+
+    row = conn.execute(
+        """
+        SELECT *
+        FROM tasks
+        WHERE id=?
+        """,
+        (task_id,)
+    ).fetchone()
+
+    conn.close()
+
+    return row
+def get_task_by_id(task_id):
+
+    conn = get_connection()
+
+    task = conn.execute(
+        """
+        SELECT *
+        FROM tasks
+        WHERE id=?
+        """,
+        (task_id,)
+    ).fetchone()
+
+    conn.close()
+
+    return task
+def update_task_details(
+    task_id,
+    description,
+    priority,
+    status
+):
+
+    conn = get_connection()
+
+    closure_date = None
+
+    if status == "Completed":
+
+        from datetime import date
+
+        closure_date = str(
+            date.today()
+        )
+
+    conn.execute(
+        """
+        UPDATE tasks
+        SET
+            description=?,
+            priority=?,
+            status=?,
+            closure_date=?
+        WHERE id=?
+        """,
+        (
+            description,
+            priority,
+            status,
+            closure_date,
+            task_id
+        )
+    )
+
+    conn.commit()
+    conn.close()
