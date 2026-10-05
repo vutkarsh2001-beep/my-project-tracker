@@ -46,6 +46,6 @@ with tab_gantt:
     )
 with tab_calendar:
     render_calendar()
- 
+
 with tab_charts:
     render_charts()
