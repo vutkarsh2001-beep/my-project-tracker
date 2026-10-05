@@ -22,6 +22,7 @@ def render_board():
     col1, col2 = st.columns([3, 1])
 
     with col1:
+
         bucket_name = st.text_input(
             "Create Bucket"
         )
@@ -137,3 +138,9 @@ def render_board():
                     )
 
                     st.rerun()
+
+    if "selected_task" in st.session_state:
+
+        render_task_details(
+            st.session_state["selected_task"]
+        )
