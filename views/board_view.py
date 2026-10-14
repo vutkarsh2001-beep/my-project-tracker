@@ -137,6 +137,18 @@ def render_board():
                         plan_end
                     )
 
+                    st.session_state[
+                        f"name_{bucket['id']}"
+                    ] = ""
+
+                    st.session_state[
+                        f"project_{bucket['id']}"
+                    ] = ""
+
+                    st.session_state[
+                        f"category_{bucket['id']}"
+                    ] = ""
+
                     st.rerun()
 
     if "selected_task" in st.session_state:
