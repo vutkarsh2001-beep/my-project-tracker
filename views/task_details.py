@@ -93,8 +93,9 @@ def render_task_details(task_id):
             status
         )
 
-        st.success(
-            "Task updated."
+        st.session_state.pop(
+            "selected_task",
+            None
         )
 
         st.rerun()
