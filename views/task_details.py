@@ -21,17 +21,19 @@ def render_task_details(task_id):
     st.markdown("---")
 
     st.subheader("Task Details")
+
     if st.button(
-    "❌ Close Details",
-    key=f"close_{task_id}"
+        "❌ Close Details",
+        key=f"close_{task_id}"
     ):
 
-    st.session_state.pop(
-        "selected_task",
-        None
-    )
+        st.session_state.pop(
+            "selected_task",
+            None
+        )
 
-    st.rerun()
+        st.rerun()
+
     st.text_input(
         "Task Name",
         value=task["task_name"],
@@ -129,7 +131,9 @@ def render_task_details(task_id):
                 task_id,
                 new_item
             )
+
             st.session_state[
                 f"new_check_{task_id}"
             ] = ""
+
             st.rerun()
