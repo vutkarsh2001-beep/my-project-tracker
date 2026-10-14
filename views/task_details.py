@@ -128,5 +128,7 @@ def render_task_details(task_id):
                 task_id,
                 new_item
             )
-
+            st.session_state[
+                f"new_check_{task_id}"
+            ] = ""
             st.rerun()
