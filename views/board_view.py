@@ -198,9 +198,8 @@ def render_board():
                     key=f"create_{bucket['id']}"
                 ):
 
-                    create_task(
+                    success = create_task(
                         category,
-                        selected_project_name,
                         bucket["id"],
                         task_name,
                         "",
@@ -208,8 +207,12 @@ def render_board():
                         plan_start,
                         plan_end
                     )
-
-                    st.rerun()
+                    if success:
+                        st.rerun()
+                    else:
+                        st.error(
+                            "Two tasks can't share same name in a Bucket"
+                        )
 
     if "selected_task" in st.session_state:
 
