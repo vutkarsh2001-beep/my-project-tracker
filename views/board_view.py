@@ -4,6 +4,11 @@ from views.task_details import (
     render_task_details
 )
 
+from database.project_repository import (
+    get_projects,
+    create_project
+)
+
 from database.bucket_repository import (
     get_buckets,
     create_bucket
@@ -18,6 +23,65 @@ from database.task_repository import (
 def render_board():
 
     st.subheader("Planner Board")
+
+    projects = get_projects()
+
+    if not projects:
+
+        st.info(
+            "No projects found."
+        )
+
+        return
+
+    project_names = [
+        p["project_name"]
+        for p in projects
+    ]
+
+    selected_project_name = st.selectbox(
+        "Project",
+        project_names
+    )
+
+    selected_project = next(
+        p
+        for p in projects
+        if p["project_name"]
+        == selected_project_name
+    )
+
+    project_id = selected_project["id"]
+
+    st.markdown("### Create Project")
+
+    new_project = st.text_input(
+        "Project Name"
+    )
+
+    if st.button("Add Project"):
+
+        if new_project.strip():
+
+            success = create_project(
+                new_project
+            )
+
+            if success:
+
+                st.success(
+                    "Project created."
+                )
+
+                st.rerun()
+
+            else:
+
+                st.error(
+                    "Project name already exists."
+                )
+
+    st.markdown("---")
 
     col1, col2 = st.columns([3, 1])
 
@@ -35,13 +99,24 @@ def render_board():
 
             if bucket_name.strip():
 
-                create_bucket(
+                success = create_bucket(
+                    project_id,
                     bucket_name
                 )
 
-                st.rerun()
+                if success:
 
-    buckets = get_buckets()
+                    st.rerun()
+
+                else:
+
+                    st.error(
+                        "Two buckets can't share same name in a Project."
+                    )
+
+    buckets = get_buckets(
+        project_id
+    )
 
     if not buckets:
 
@@ -69,8 +144,10 @@ def render_board():
             )
 
             bucket_tasks = [
-                t for t in tasks
-                if t["bucket_id"] == bucket["id"]
+                t
+                for t in tasks
+                if t["bucket_id"]
+                == bucket["id"]
             ]
 
             for task in bucket_tasks:
@@ -93,11 +170,6 @@ def render_board():
                 task_name = st.text_input(
                     "Task Name",
                     key=f"name_{bucket['id']}"
-                )
-
-                project = st.text_input(
-                    "Project",
-                    key=f"project_{bucket['id']}"
                 )
 
                 category = st.text_input(
@@ -128,7 +200,7 @@ def render_board():
 
                     create_task(
                         category,
-                        project,
+                        selected_project_name,
                         bucket["id"],
                         task_name,
                         "",
@@ -142,5 +214,7 @@ def render_board():
     if "selected_task" in st.session_state:
 
         render_task_details(
-            st.session_state["selected_task"]
+            st.session_state[
+                "selected_task"
+            ]
         )
